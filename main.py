@@ -10,6 +10,7 @@ from src.config import settings
 from sentence_transformers import SentenceTransformer
 import uvicorn
 from fastapi import FastAPI, Body
+import os
 
 client = GenAIAgentClient(base_url=settings.BASE_ULR, api_key=settings.API_KEY)
 
@@ -71,7 +72,12 @@ RAC = RetrievalAugmentationConfig(
     qa_model=GEMMAQAModel(),
     embedding_model=SBertEmbeddingModel(),
 )
-RA = RetrievalAugmentation(config=RAC)
+if os.path.exists("data/info"):
+    tree = "data/info"
+else:
+    tree = None
+    
+RA = RetrievalAugmentation(config=RAC, tree=tree)
 
 docs: list[str] = []
 app = FastAPI()
@@ -87,6 +93,7 @@ async def add_doc(data: str = Body()):
 async def index_docs():
     text = "\n\n".join(docs)
     RA.add_documents(text)
+    RA.save("data/info")
     return "ok"
 
 
