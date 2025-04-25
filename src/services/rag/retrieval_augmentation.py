@@ -1,18 +1,15 @@
-import logging
-import pickle
+from src.core.logger import logger
+from src.services.trees.cluster_tree_builder import ClusterTreeBuilder, ClusterTreeConfig
+from src.services.chat.embedding_models import BaseEmbeddingModel
+from src.services.chat.qa_models import BaseQAModel, GPT3TurboQAModel
+from src.services.chat.summarization_models import BaseSummarizationModel
+from src.services.trees.tree_retriever import TreeRetriever, TreeRetrieverConfig
+from src.services.trees.tree_structures import Tree
 
-from .cluster_tree_builder import ClusterTreeBuilder, ClusterTreeConfig
-from .EmbeddingModels import BaseEmbeddingModel
-from .QAModels import BaseQAModel, GPT3TurboQAModel
-from .SummarizationModels import BaseSummarizationModel
-from .tree_builder import TreeBuilder, TreeBuilderConfig
-from .tree_retriever import TreeRetriever, TreeRetrieverConfig
-from .tree_structures import Node, Tree
+import pickle
 
 # Define a dictionary to map supported tree builders to their respective configs
 supported_tree_builders = {"cluster": (ClusterTreeBuilder, ClusterTreeConfig)}
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 
 class RetrievalAugmentationConfig:
@@ -136,9 +133,9 @@ class RetrievalAugmentationConfig:
         config_summary = """
         RetrievalAugmentationConfig:
             {tree_builder_config}
-            
+
             {tree_retriever_config}
-            
+
             QA Model: {qa_model}
             Tree Builder Type: {tree_builder_type}
         """.format(
@@ -197,7 +194,7 @@ class RetrievalAugmentation:
         else:
             self.retriever = None
 
-        logging.info(
+        logger.info(
             f"Successfully initialized RetrievalAugmentation with Config {config.log_config()}"
         )
 
@@ -303,4 +300,4 @@ class RetrievalAugmentation:
             raise ValueError("There is no tree to save.")
         with open(path, "wb") as file:
             pickle.dump(self.tree, file)
-        logging.info(f"Tree successfully saved to {path}")
+        logger.info(f"Tree successfully saved to {path}")

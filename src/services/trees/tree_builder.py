@@ -1,24 +1,17 @@
 import copy
-import logging
-import os
 from abc import abstractclassmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Lock
 from typing import Dict, List, Optional, Set, Tuple
-
-import openai
 import tiktoken
-from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from .EmbeddingModels import BaseEmbeddingModel, OpenAIEmbeddingModel
-from .SummarizationModels import (BaseSummarizationModel,
+from src.services.chat.embedding_models import BaseEmbeddingModel, OpenAIEmbeddingModel
+from src.services.chat.summarization_models import (BaseSummarizationModel,
                                   GPT3TurboSummarizationModel)
-from .tree_structures import Node, Tree
-from .utils import (distances_from_embeddings, get_children, get_embeddings,
-                    get_node_list, get_text,
+from src.services.trees.tree_structures import Node, Tree
+from src.utils import (distances_from_embeddings, get_embeddings,
                     indices_of_nearest_neighbors_from_distances, split_text)
 
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+from src.core.logger import logger
 
 
 class TreeBuilderConfig:
@@ -151,7 +144,7 @@ class TreeBuilder:
         self.embedding_models = config.embedding_models
         self.cluster_embedding_model = config.cluster_embedding_model
 
-        logging.info(
+        logger.info(
             f"Successfully initialized TreeBuilder with Config {config.log_config()}"
         )
 
@@ -270,7 +263,7 @@ class TreeBuilder:
         """
         chunks = split_text(text, self.tokenizer, self.max_tokens)
 
-        logging.info("Creating Leaf Nodes")
+        logger.info("Creating Leaf Nodes")
 
         if use_multithreading:
             leaf_nodes = self.multithreaded_create_leaf_nodes(chunks)
@@ -282,9 +275,9 @@ class TreeBuilder:
 
         layer_to_nodes = {0: list(leaf_nodes.values())}
 
-        logging.info(f"Created {len(leaf_nodes)} Leaf Embeddings")
+        logger.info(f"Created {len(leaf_nodes)} Leaf Embeddings")
 
-        logging.info("Building All Nodes")
+        logger.info("Building All Nodes")
 
         all_nodes = copy.deepcopy(leaf_nodes)
 

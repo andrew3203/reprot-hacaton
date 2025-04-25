@@ -1,17 +1,13 @@
-import logging
-import pickle
+from src.core.logger import logger
+
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
-from typing import Dict, List, Set
+from typing import Dict, List
 
-from .cluster_utils import ClusteringAlgorithm, RAPTOR_Clustering
-from .tree_builder import TreeBuilder, TreeBuilderConfig
-from .tree_structures import Node, Tree
-from .utils import (distances_from_embeddings, get_children, get_embeddings,
-                    get_node_list, get_text,
-                    indices_of_nearest_neighbors_from_distances, split_text)
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+from src.services.trees.cluster_utils import RAPTOR_Clustering
+from src.services.trees.tree_builder import TreeBuilder, TreeBuilderConfig
+from src.services.trees.tree_structures import Node, Tree
+from src.utils import get_node_list, get_text
 
 
 class ClusterTreeConfig(TreeBuilderConfig):
@@ -48,7 +44,7 @@ class ClusterTreeBuilder(TreeBuilder):
         self.clustering_algorithm = config.clustering_algorithm
         self.clustering_params = config.clustering_params
 
-        logging.info(
+        logger.info(
             f"Successfully initialized ClusterTreeBuilder with Config {config.log_config()}"
         )
 
@@ -59,7 +55,7 @@ class ClusterTreeBuilder(TreeBuilder):
         layer_to_nodes: Dict[int, List[Node]],
         use_multithreading: bool = False,
     ) -> Dict[int, Node]:
-        logging.info("Using Cluster TreeBuilder")
+        logger.info("Using Cluster TreeBuilder")
 
         next_node_index = len(all_tree_nodes)
 
@@ -73,7 +69,7 @@ class ClusterTreeBuilder(TreeBuilder):
                 max_tokens=summarization_length,
             )
 
-            logging.info(
+            logger.info(
                 f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
             )
 
@@ -88,13 +84,13 @@ class ClusterTreeBuilder(TreeBuilder):
 
             new_level_nodes = {}
 
-            logging.info(f"Constructing Layer {layer}")
+            logger.info(f"Constructing Layer {layer}")
 
             node_list_current_layer = get_node_list(current_level_nodes)
 
             if len(node_list_current_layer) <= self.reduction_dimension + 1:
                 self.num_layers = layer
-                logging.info(
+                logger.info(
                     f"Stopping Layer construction: Cannot Create More Layers. Total Layers in tree: {layer}"
                 )
                 break
@@ -109,7 +105,7 @@ class ClusterTreeBuilder(TreeBuilder):
             lock = Lock()
 
             summarization_length = self.summarization_length
-            logging.info(f"Summarization Length: {summarization_length}")
+            logger.info(f"Summarization Length: {summarization_length}")
 
             if use_multithreading:
                 with ThreadPoolExecutor() as executor:

@@ -1,4 +1,3 @@
-import logging
 import random
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -8,14 +7,9 @@ import tiktoken
 import umap
 from sklearn.mixture import GaussianMixture
 
-# Initialize logging
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+from src.services.trees.tree_structures import Node
+from src.core.logger import logger
 
-from .tree_structures import Node
-# Import necessary methods from other modules
-from .utils import get_embeddings
-
-# Set a random seed for reproducibility
 RANDOM_SEED = 224
 random.seed(RANDOM_SEED)
 
@@ -75,7 +69,7 @@ def perform_clustering(
     )
 
     if verbose:
-        logging.info(f"Global Clusters: {n_global_clusters}")
+        logger.info(f"Global Clusters: {n_global_clusters}")
 
     all_local_clusters = [np.array([]) for _ in range(len(embeddings))]
     total_clusters = 0
@@ -85,7 +79,7 @@ def perform_clustering(
             np.array([i in gc for gc in global_clusters])
         ]
         if verbose:
-            logging.info(
+            logger.info(
                 f"Nodes in Global Cluster {i}: {len(global_cluster_embeddings_)}"
             )
         if len(global_cluster_embeddings_) == 0:
@@ -102,7 +96,7 @@ def perform_clustering(
             )
 
         if verbose:
-            logging.info(f"Local Clusters in Global Cluster {i}: {n_local_clusters}")
+            logger.info(f"Local Clusters in Global Cluster {i}: {n_local_clusters}")
 
         for j in range(n_local_clusters):
             local_cluster_embeddings_ = global_cluster_embeddings_[
@@ -119,7 +113,7 @@ def perform_clustering(
         total_clusters += n_local_clusters
 
     if verbose:
-        logging.info(f"Total Clusters: {total_clusters}")
+        logger.info(f"Total Clusters: {total_clusters}")
     return all_local_clusters
 
 
@@ -171,7 +165,7 @@ class RAPTOR_Clustering(ClusteringAlgorithm):
             # If the total length exceeds the maximum allowed length, recluster this cluster
             if total_length > max_length_in_cluster:
                 if verbose:
-                    logging.info(
+                    logger.info(
                         f"reclustering cluster with {len(cluster_nodes)} nodes"
                     )
                 node_clusters.extend(
