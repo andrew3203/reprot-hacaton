@@ -37,5 +37,5 @@ async def index_docs():
 async def add_docs(data: list = Body()):
     """Добавить несколько документов"""
     docs.extend(data)
-    res = {"status": "ok", "model": RA.retriever.embedding_model_string}
+    res = {"status": "ok", "model": RA.retriever.context_embedding_model}
     return JSONResponse(content=res)
