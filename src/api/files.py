@@ -11,7 +11,6 @@ docs: list[str] = []
 
 @router.post("/upload", response_model=str)
 async def add_doc(data: str = Body()):
-    print(data)
     docs.append(data)
     # Check if retriever exists and initialize if needed
     if not hasattr(RA, 'retriever') or RA.retriever is None:
