@@ -1,4 +1,5 @@
 from src.services.rag.ra import RA
+from src.core.logger import logger
 
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
@@ -12,7 +13,15 @@ docs: list[str] = []
 async def add_doc(data: str = Body()):
     print(data)
     docs.append(data)
-    res = {"status": "ok", "model": RA.retriever.embedding_model_string}
+    # Check if retriever exists and initialize if needed
+    if not hasattr(RA, 'retriever') or RA.retriever is None:
+        # Check if there's saved data to load
+        try:
+            RA.load("data/info")
+        except Exception as e:
+            logger.error(f"Error loading retriever: {e}")
+            RA.add_documents("")
+    res = {"status": "ok", "model": RA.retriever.context_embedding_model}
     return JSONResponse(content=res)
 
 
