@@ -4,6 +4,7 @@ services:
       context: .
     image: app
     container_name: app
+    depends_on: []
     volumes:
       - .:/app
     env_file:
