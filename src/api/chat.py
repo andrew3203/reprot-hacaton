@@ -11,11 +11,9 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 @router.post("/answer", response_model=dict)
 async def answer(question: str = Body()):
     context = RA.answer_question(question=question)
-    answer = context.answer
     data = {
         "context": context,
-        "answer": answer,
-        "model": RA.retriever.embedding_model_string
+        "model": RA.retriever.context_embedding_model
     }
     return JSONResponse(content=data)
 
