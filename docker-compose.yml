@@ -4,11 +4,10 @@ services:
       context: .
     image: app
     container_name: app
-    depends_on:
     volumes:
       - .:/app
     env_file:
       - .env
     ports:
       - "8000:8000"
-    command: ["uv", "run", "main.py"]
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
