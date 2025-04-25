@@ -63,4 +63,3 @@ class SBertEmbeddingModel(BaseEmbeddingModel):
 
     def create_embedding(self, text):
         return self.model.encode(text)
-

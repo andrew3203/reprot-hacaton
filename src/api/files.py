@@ -10,6 +10,7 @@ docs: list[str] = []
 
 @router.post("/upload", response_model=str)
 async def add_doc(data: str = Body()):
+    print(data)
     docs.append(data)
     res = {"status": "ok", "model": RA.retriever.embedding_model_string}
     return JSONResponse(content=res)
