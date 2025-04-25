@@ -256,6 +256,55 @@ class RetrievalAugmentation:
             collapse_tree,
             return_layer_information,
         )
+    
+    def retrieve_stream(
+        self,
+        question,
+        start_layer: int = None,
+        num_layers: int = None,
+        top_k: int = 10,
+        max_tokens: int = 3500,
+        collapse_tree: bool = True,
+    ):
+        """
+        Retrieves information in a streaming manner using the TreeRetriever instance.
+        
+        Args:
+            question (str): The question to answer.
+            start_layer (int): The layer to start from. Defaults to self.start_layer.
+            num_layers (int): The number of layers to traverse. Defaults to self.num_layers.
+            top_k (int): Number of top results to return. Defaults to 10.
+            max_tokens (int): The maximum number of tokens. Defaults to 3500.
+            collapse_tree (bool): Whether to use collapsed tree approach. Defaults to True.
+            
+        Yields:
+            dict: Dictionary with retrieved context chunk and model information.
+            
+        Raises:
+            ValueError: If the TreeRetriever instance has not been initialized.
+        """
+        if self.retriever is None:
+            raise ValueError(
+                "The TreeRetriever instance has not been initialized. Call 'add_documents' first."
+            )
+        
+        # Retrieve all nodes and context with layer information
+        selected_nodes, context = self.retriever.retrieve(
+            question,
+            start_layer,
+            num_layers,
+            top_k, 
+            max_tokens,
+            collapse_tree,
+            return_layer_information=False  # We handle the nodes directly
+        )
+        
+        # Stream each node's text as separate chunk
+        for node in selected_nodes:
+            yield {
+                "context": node.text,
+                "model": self.retriever.context_embedding_model
+            }
 
     def answer_question(
         self,

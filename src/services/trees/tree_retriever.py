@@ -320,3 +320,43 @@ class TreeRetriever(BaseRetriever):
             return context, layer_information
 
         return context
+    
+    def retrieve_stream(
+        self,
+        query: str,
+        start_layer: int = None,
+        num_layers: int = None,
+        top_k: int = 10, 
+        max_tokens: int = 3500,
+        collapse_tree: bool = True,
+    ):
+        """
+        Retrieves the most relevant information from the tree based on the query in a streaming manner.
+
+        Args:
+            query (str): The query text.
+            start_layer (int): The layer to start from. Defaults to self.start_layer.
+            num_layers (int): The number of layers to traverse. Defaults to self.num_layers.
+            top_k (int): Number of top results to retrieve. Defaults to 10.
+            max_tokens (int): The maximum number of tokens. Defaults to 3500.
+            collapse_tree (bool): Whether to retrieve information from all nodes. Defaults to True.
+
+        Yields:
+            dict: Dictionary containing context chunk and model information.
+        """
+        if collapse_tree:
+            selected_nodes, _ = self.retrieve_information_collapse_tree(
+                query, top_k, max_tokens
+            )
+        else:
+            layer_nodes = self.tree.layer_to_nodes[start_layer or self.start_layer]
+            selected_nodes, _ = self.retrieve_information(
+                layer_nodes, query, num_layers or self.num_layers
+            )
+        
+        # Stream each node individually
+        for node in selected_nodes:
+            yield {
+                "context": node.text,
+                "model": self.context_embedding_model
+            }
