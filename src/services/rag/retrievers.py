@@ -3,8 +3,6 @@ from src.services.chat.llm import ChatCompletionRequest, Message
 from src.services.chat.summarization_models import BaseSummarizationModel
 from src.services.chat.qa_models import BaseQAModel
 from src.services.chat.embedding_models import BaseEmbeddingModel
-from src.services.rag.retrieval_augmentation import RetrievalAugmentationConfig
-from src.services.rag.retrieval_augmentation import RetrievalAugmentation
 from src.core.config import settings
 from sentence_transformers import SentenceTransformer
 
@@ -66,6 +64,8 @@ class SBertEmbeddingModel(BaseEmbeddingModel):
     def create_embedding(self, text):
         return self.model.encode(text)
 
+from src.services.rag.retrieval_augmentation import RetrievalAugmentationConfig
+from src.services.rag.retrieval_augmentation import RetrievalAugmentation
 
 RAC = RetrievalAugmentationConfig(
     summarization_model=GEMMASummarizationModel(),

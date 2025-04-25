@@ -8,10 +8,6 @@ class Settings(BaseSettings):
     API_KEY: str
     LOG_LEVEL: str = "INFO"
 
-    ORIGINS: str
-    GPT_MODEL: str
-    TEMPERATURE: float = 0.25
-
     @property
     def client(self):
         return GenAIAgentClient(base_url=self.BASE_ULR, api_key=self.API_KEY)
