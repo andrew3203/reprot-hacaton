@@ -10,4 +10,4 @@ services:
       - .env
     ports:
       - "8000:8000"
-    command: ["uv", "run", "main.py"]
+    command: ["uv", "run", "src/main.py"]
