@@ -12,8 +12,5 @@ RAC = RetrievalAugmentationConfig(
 
 RA = RetrievalAugmentation(config=RAC, tree=settings.tree)
 
-if os.path.exists("data/info"):
-    RA.load("data/info")
-else:
-    # Initialize with empty data to create the retriever
-    RA.add_documents("")
+# RA.load("data/info")
+# RA.add_documents("")

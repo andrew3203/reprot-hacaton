@@ -1,8 +1,9 @@
 from src.services.rag.ra import RA
 from src.core.logger import logger
-
+import os
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
+
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
@@ -28,8 +29,9 @@ async def add_doc(data: str = Body()):
 async def index_docs():
     text = "\n\n".join(docs)
     RA.add_documents(text)
+    os.makedirs("data", exist_ok=True)
     RA.save("data/info")
-    res = {"status": "ok", "model": RA.retriever.embedding_model_string}
+    res = {"status": "ok", "model": RA.retriever.context_embedding_model}
     return JSONResponse(content=res)
 
 

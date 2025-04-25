@@ -301,3 +301,8 @@ class RetrievalAugmentation:
         with open(path, "wb") as file:
             pickle.dump(self.tree, file)
         logger.info(f"Tree successfully saved to {path}")
+
+    def load(self, path):
+        with open(path, "rb") as file:
+            self.tree = pickle.load(file)
+        logger.info(f"Tree successfully loaded from {path}")
