@@ -1,4 +1,4 @@
-from src.services.rag.retrievers import RA
+from src.services.rag.ra import RA
 
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse

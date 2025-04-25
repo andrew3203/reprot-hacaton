@@ -64,13 +64,3 @@ class SBertEmbeddingModel(BaseEmbeddingModel):
     def create_embedding(self, text):
         return self.model.encode(text)
 
-from src.services.rag.retrieval_augmentation import RetrievalAugmentationConfig
-from src.services.rag.retrieval_augmentation import RetrievalAugmentation
-
-RAC = RetrievalAugmentationConfig(
-    summarization_model=GEMMASummarizationModel(),
-    qa_model=GEMMAQAModel(),
-    embedding_model=SBertEmbeddingModel(),
-)
-
-RA = RetrievalAugmentation(config=RAC, tree=settings.tree)
