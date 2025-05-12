@@ -1,18 +1,15 @@
-import logging
-import pickle
+from src.core.logger import logger
+from src.services.trees.cluster_tree_builder import ClusterTreeBuilder, ClusterTreeConfig
+from src.services.chat.embedding_models import BaseEmbeddingModel
+from src.services.chat.qa_models import BaseQAModel, GPT3TurboQAModel
+from src.services.chat.summarization_models import BaseSummarizationModel
+from src.services.trees.tree_retriever import TreeRetriever, TreeRetrieverConfig
+from src.services.trees.tree_structures import Tree
 
-from .cluster_tree_builder import ClusterTreeBuilder, ClusterTreeConfig
-from .EmbeddingModels import BaseEmbeddingModel
-from .QAModels import BaseQAModel, GPT3TurboQAModel
-from .SummarizationModels import BaseSummarizationModel
-from .tree_builder import TreeBuilder, TreeBuilderConfig
-from .tree_retriever import TreeRetriever, TreeRetrieverConfig
-from .tree_structures import Node, Tree
+import pickle
 
 # Define a dictionary to map supported tree builders to their respective configs
 supported_tree_builders = {"cluster": (ClusterTreeBuilder, ClusterTreeConfig)}
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 
 class RetrievalAugmentationConfig:
@@ -136,9 +133,9 @@ class RetrievalAugmentationConfig:
         config_summary = """
         RetrievalAugmentationConfig:
             {tree_builder_config}
-            
+
             {tree_retriever_config}
-            
+
             QA Model: {qa_model}
             Tree Builder Type: {tree_builder_type}
         """.format(
@@ -197,7 +194,7 @@ class RetrievalAugmentation:
         else:
             self.retriever = None
 
-        logging.info(
+        logger.info(
             f"Successfully initialized RetrievalAugmentation with Config {config.log_config()}"
         )
 
@@ -259,6 +256,55 @@ class RetrievalAugmentation:
             collapse_tree,
             return_layer_information,
         )
+    
+    def retrieve_stream(
+        self,
+        question,
+        start_layer: int = None,
+        num_layers: int = None,
+        top_k: int = 10,
+        max_tokens: int = 3500,
+        collapse_tree: bool = True,
+    ):
+        """
+        Retrieves information in a streaming manner using the TreeRetriever instance.
+        
+        Args:
+            question (str): The question to answer.
+            start_layer (int): The layer to start from. Defaults to self.start_layer.
+            num_layers (int): The number of layers to traverse. Defaults to self.num_layers.
+            top_k (int): Number of top results to return. Defaults to 10.
+            max_tokens (int): The maximum number of tokens. Defaults to 3500.
+            collapse_tree (bool): Whether to use collapsed tree approach. Defaults to True.
+            
+        Yields:
+            dict: Dictionary with retrieved context chunk and model information.
+            
+        Raises:
+            ValueError: If the TreeRetriever instance has not been initialized.
+        """
+        if self.retriever is None:
+            raise ValueError(
+                "The TreeRetriever instance has not been initialized. Call 'add_documents' first."
+            )
+        
+        # Retrieve all nodes and context with layer information
+        selected_nodes, context = self.retriever.retrieve(
+            question,
+            start_layer,
+            num_layers,
+            top_k, 
+            max_tokens,
+            collapse_tree,
+            return_layer_information=False  # We handle the nodes directly
+        )
+        
+        # Stream each node's text as separate chunk
+        for node in selected_nodes:
+            yield {
+                "context": node.text,
+                "model": self.retriever.context_embedding_model
+            }
 
     def answer_question(
         self,
@@ -303,4 +349,9 @@ class RetrievalAugmentation:
             raise ValueError("There is no tree to save.")
         with open(path, "wb") as file:
             pickle.dump(self.tree, file)
-        logging.info(f"Tree successfully saved to {path}")
+        logger.info(f"Tree successfully saved to {path}")
+
+    def load(self, path):
+        with open(path, "rb") as file:
+            self.tree = pickle.load(file)
+        logger.info(f"Tree successfully loaded from {path}")

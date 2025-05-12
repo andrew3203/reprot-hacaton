@@ -1,19 +1,14 @@
-import logging
-import os
-from typing import Dict, List, Set
-
+from src.core.logger import logger
+from typing import List
 import tiktoken
-from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from .EmbeddingModels import BaseEmbeddingModel, OpenAIEmbeddingModel
-from .Retrievers import BaseRetriever
-from .tree_structures import Node, Tree
-from .utils import (distances_from_embeddings, get_children, get_embeddings,
+from src.services.chat.embedding_models import BaseEmbeddingModel, OpenAIEmbeddingModel
+from src.services.rag.retrievers import BaseRetriever
+from src.services.trees.tree_structures import Node, Tree
+from src.utils import (distances_from_embeddings, get_embeddings,
                     get_node_list, get_text,
                     indices_of_nearest_neighbors_from_distances,
                     reverse_mapping)
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 
 class TreeRetrieverConfig:
@@ -139,7 +134,7 @@ class TreeRetriever(BaseRetriever):
 
         self.tree_node_index_to_layer = reverse_mapping(self.tree.layer_to_nodes)
 
-        logging.info(
+        logger.info(
             f"Successfully initialized TreeRetriever with Config {config.log_config()}"
         )
 
@@ -300,7 +295,7 @@ class TreeRetriever(BaseRetriever):
             raise ValueError("num_layers must be less than or equal to start_layer + 1")
 
         if collapse_tree:
-            logging.info(f"Using collapsed_tree")
+            logger.info(f"Using collapsed_tree")
             selected_nodes, context = self.retrieve_information_collapse_tree(
                 query, top_k, max_tokens
             )
@@ -325,3 +320,43 @@ class TreeRetriever(BaseRetriever):
             return context, layer_information
 
         return context
+    
+    def retrieve_stream(
+        self,
+        query: str,
+        start_layer: int = None,
+        num_layers: int = None,
+        top_k: int = 10, 
+        max_tokens: int = 3500,
+        collapse_tree: bool = True,
+    ):
+        """
+        Retrieves the most relevant information from the tree based on the query in a streaming manner.
+
+        Args:
+            query (str): The query text.
+            start_layer (int): The layer to start from. Defaults to self.start_layer.
+            num_layers (int): The number of layers to traverse. Defaults to self.num_layers.
+            top_k (int): Number of top results to retrieve. Defaults to 10.
+            max_tokens (int): The maximum number of tokens. Defaults to 3500.
+            collapse_tree (bool): Whether to retrieve information from all nodes. Defaults to True.
+
+        Yields:
+            dict: Dictionary containing context chunk and model information.
+        """
+        if collapse_tree:
+            selected_nodes, _ = self.retrieve_information_collapse_tree(
+                query, top_k, max_tokens
+            )
+        else:
+            layer_nodes = self.tree.layer_to_nodes[start_layer or self.start_layer]
+            selected_nodes, _ = self.retrieve_information(
+                layer_nodes, query, num_layers or self.num_layers
+            )
+        
+        # Stream each node individually
+        for node in selected_nodes:
+            yield {
+                "context": node.text,
+                "model": self.context_embedding_model
+            }

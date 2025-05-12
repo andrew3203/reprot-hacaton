@@ -4,11 +4,11 @@ services:
       context: .
     image: app
     container_name: app
-    depends_on:
+    depends_on: []
     volumes:
       - .:/app
     env_file:
       - .env
     ports:
       - "8000:8000"
-    command: ["uv", "run", "main.py"]
+    command: ["uv", "run", "src/main.py"]

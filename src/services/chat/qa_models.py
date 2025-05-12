@@ -1,10 +1,7 @@
-import logging
-import os
+from src.core.logger import logger
+from src.core.config import settings
 
 from openai import OpenAI
-
-
-import getpass
 from abc import ABC, abstractmethod
 
 import torch
@@ -15,6 +12,7 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 class BaseQAModel(ABC):
     @abstractmethod
     def answer_question(self, context, question):
+        # def answer_question(self, context, question, max_tokens=150, stop_sequence=None):
         pass
 
 
@@ -27,7 +25,7 @@ class GPT3QAModel(BaseQAModel):
             model (str, optional): The GPT-3 model version to use for generating summaries. Defaults to "text-davinci-003".
         """
         self.model = model
-        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
     def answer_question(self, context, question, max_tokens=150, stop_sequence=None):
@@ -69,7 +67,7 @@ class GPT3TurboQAModel(BaseQAModel):
             model (str, optional): The GPT-3 model version to use for generating summaries. Defaults to "text-davinci-003".
         """
         self.model = model
-        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
     def _attempt_answer_question(
@@ -121,7 +119,7 @@ class GPT4QAModel(BaseQAModel):
             model (str, optional): The GPT-3 model version to use for generating summaries. Defaults to "text-davinci-003".
         """
         self.model = model
-        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
     def _attempt_answer_question(

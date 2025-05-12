@@ -1,18 +1,16 @@
-from src.llm import ChatCompletionRequest, GenAIAgentClient, Message
-from src import (
-    BaseSummarizationModel,
-    BaseQAModel,
-    BaseEmbeddingModel,
-    RetrievalAugmentationConfig,
-)
-from src import RetrievalAugmentation
-from src.config import settings
+from abc import ABC, abstractmethod
+from src.services.chat.llm import ChatCompletionRequest, Message
+from src.services.chat.summarization_models import BaseSummarizationModel
+from src.services.chat.qa_models import BaseQAModel
+from src.services.chat.embedding_models import BaseEmbeddingModel
+from src.core.config import settings
 from sentence_transformers import SentenceTransformer
-import uvicorn
-from fastapi import FastAPI, Body
-import os
 
-client = GenAIAgentClient(base_url=settings.BASE_ULR, api_key=settings.API_KEY)
+
+class BaseRetriever(ABC):
+    @abstractmethod
+    def retrieve(self, query: str) -> str:
+        pass
 
 
 class GEMMASummarizationModel(BaseSummarizationModel):
@@ -33,7 +31,7 @@ class GEMMASummarizationModel(BaseSummarizationModel):
             max_completion_tokens=400,
         )
 
-        response = client.chat_completion(payload=request_payload)
+        response = settings.client.chat_completion(payload=request_payload)
         return response["choices"][0]["message"]["content"]
 
 
@@ -55,7 +53,7 @@ class GEMMAQAModel(BaseQAModel):
             max_completion_tokens=400,
         )
 
-        response = client.chat_completion(payload=request_payload)
+        response = settings.client.chat_completion(payload=request_payload)
         return response["choices"][0]["message"]["content"]
 
 
@@ -65,47 +63,3 @@ class SBertEmbeddingModel(BaseEmbeddingModel):
 
     def create_embedding(self, text):
         return self.model.encode(text)
-
-
-RAC = RetrievalAugmentationConfig(
-    summarization_model=GEMMASummarizationModel(),
-    qa_model=GEMMAQAModel(),
-    embedding_model=SBertEmbeddingModel(),
-)
-if os.path.exists("data/info"):
-    tree = "data/info"
-else:
-    tree = None
-    
-RA = RetrievalAugmentation(config=RAC, tree=tree)
-
-docs: list[str] = []
-app = FastAPI()
-
-
-@app.post("/upload", response_model=str)
-async def add_doc(data: str = Body()):
-    docs.append(data)
-    return "ok"
-
-
-@app.get("/index", response_model=dict)
-async def index_docs():
-    text = "\n\n".join(docs)
-    RA.add_documents(text)
-    RA.save("data/info")
-    return "ok"
-
-
-@app.post("/answer", response_model=str)
-async def answer(question: str = Body()):
-    return RA.answer_question(question=question)
-
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        timeout_keep_alive=10000,
-    )

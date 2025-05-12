@@ -1,11 +1,8 @@
-import logging
-import os
+from src.core.logger import logger
 from abc import ABC, abstractmethod
 
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 
 class BaseSummarizationModel(ABC):
@@ -24,7 +21,6 @@ class GPT3TurboSummarizationModel(BaseSummarizationModel):
 
         try:
             client = OpenAI()
-
             response = client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -36,9 +32,7 @@ class GPT3TurboSummarizationModel(BaseSummarizationModel):
                 ],
                 max_tokens=max_tokens,
             )
-
             return response.choices[0].message.content
-
         except Exception as e:
             print(e)
             return e
@@ -66,9 +60,7 @@ class GPT3SummarizationModel(BaseSummarizationModel):
                 ],
                 max_tokens=max_tokens,
             )
-
             return response.choices[0].message.content
-
         except Exception as e:
             print(e)
             return e

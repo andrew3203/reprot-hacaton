@@ -1,4 +1,4 @@
-import logging
+from src.core.logger import logger
 import re
 from typing import Dict, List, Set
 
@@ -6,9 +6,7 @@ import numpy as np
 import tiktoken
 from scipy import spatial
 
-from .tree_structures import Node
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+from src.services.trees.tree_structures import Node
 
 
 def reverse_mapping(layer_to_nodes: Dict[int, List[Node]]) -> Dict[Node, int]:

@@ -1,3 +1,7 @@
+from src.services.chat.embedding_models import BaseEmbeddingModel, OpenAIEmbeddingModel
+from src.services.rag.retrievers import BaseRetriever
+from src.utils import split_text
+
 import random
 from concurrent.futures import ProcessPoolExecutor
 
@@ -5,10 +9,6 @@ import faiss
 import numpy as np
 import tiktoken
 from tqdm import tqdm
-
-from .EmbeddingModels import BaseEmbeddingModel, OpenAIEmbeddingModel
-from .Retrievers import BaseRetriever
-from .utils import split_text
 
 
 class FaissRetrieverConfig:
@@ -198,4 +198,50 @@ class FaissRetriever(BaseRetriever):
                     break
                 total_tokens += tokens
 
-        return context
+        # return context
+        return {
+            "context": context,
+            "model": self.embedding_model_string
+        }
+    
+    def retrieve_stream(self, query: str):
+        """
+        Retrieves the most similar context chunks for a given query as a stream.
+
+        :param query: A string containing the query.
+        :yield: Dictionaries containing retrieved context chunks and embedding model info.
+        """
+        query_embedding = np.array(
+            [
+                np.array(
+                    self.question_embedding_model.create_embedding(query),
+                    dtype=np.float32,
+                ).squeeze()
+            ]
+        )
+
+        if self.use_top_k:
+            _, indices = self.index.search(query_embedding, self.top_k)
+            for i in range(min(self.top_k, len(indices[0]))):
+                yield {
+                    "context": self.context_chunks[indices[0][i]],
+                    "model": self.embedding_model_string
+                }
+        else:
+            range_ = int(self.max_context_tokens / self.max_tokens)
+            _, indices = self.index.search(query_embedding, range_)
+            total_tokens = 0
+
+            for i in range(min(range_, len(indices[0]))):
+                chunk = self.context_chunks[indices[0][i]]
+                tokens = len(self.tokenizer.encode(chunk))
+
+                if total_tokens + tokens > self.max_context_tokens:
+                    break
+
+                yield {
+                    "context": chunk,
+                    "model": self.embedding_model_string
+                }
+
+                total_tokens += tokens
